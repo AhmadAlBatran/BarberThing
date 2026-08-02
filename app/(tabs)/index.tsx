@@ -9,6 +9,9 @@ import {
   Modal,
 } from 'react-native';
 
+// 1. IMPORT THE AUTH HOOK HERE
+import { useAuth } from '@/context/AuthContext';
+
 const SERVICES = [
   'Haircut & Styling',
   'Beard Trim',
@@ -48,6 +51,9 @@ const PAST_APPOINTMENTS = [
 ];
 
 export default function MenuScreen() {
+  // 2. CALL THE HOOK AT THE TOP OF YOUR COMPONENT
+  const { logout, userPhone } = useAuth();
+
   const [upcoming, setUpcoming] = useState<Appointment[]>([
     {
       id: '1',
@@ -77,9 +83,10 @@ export default function MenuScreen() {
   const [editService, setEditService] = useState<string>('');
   const [editTime, setEditTime] = useState<string>('');
 
+  // 3. USE THE DYNAMIC PHONE NUMBER FROM CONTEXT
   const user = {
     name: 'John Doe',
-    phone: '+1 234 567 890',
+    phone: userPhone || '+1 234 567 890',
   };
 
   // 1. Cancel Action
@@ -140,6 +147,14 @@ export default function MenuScreen() {
             <Text style={styles.userPhone}>{user.phone}</Text>
           </View>
         </View>
+
+        {/* 4. LOG OUT BUTTON INSIDE THE PROFILE CARD */}
+        <TouchableOpacity
+          style={[styles.cancelButton, { marginTop: 15, backgroundColor: '#ffebee' }]}
+          onPress={logout}
+        >
+          <Text style={[styles.cancelButtonText, { color: '#d32f2f' }]}>Log Out</Text>
+        </TouchableOpacity>
       </View>
 
       {/* 2. UPCOMING APPOINTMENTS */}
@@ -150,7 +165,7 @@ export default function MenuScreen() {
             <View style={styles.cardHeader}>
               <Text style={styles.serviceTitle}>{item.service}</Text>
 
-              {/* EDIT BUTTON (Top Right Corner) */}
+              {/* EDIT BUTTON */}
               <TouchableOpacity
                 style={styles.editButton}
                 onPress={() => openEditModal(item)}
@@ -162,7 +177,7 @@ export default function MenuScreen() {
             <Text style={styles.detailText}>📅 {item.date} at {item.time}</Text>
             <Text style={styles.detailText}>💈 Barber: {item.barber}</Text>
 
-            {/* CANCEL BUTTON (Bottom of Card) */}
+            {/* CANCEL BUTTON */}
             <TouchableOpacity
               style={styles.cancelButton}
               onPress={() => handleCancel(item.id)}
@@ -195,7 +210,6 @@ export default function MenuScreen() {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Edit Appointment</Text>
 
-            {/* Change Service / Package */}
             <Text style={styles.modalSubTitle}>Select Service or Package</Text>
             {SERVICES.map((s) => (
               <TouchableOpacity
@@ -217,7 +231,6 @@ export default function MenuScreen() {
               </TouchableOpacity>
             ))}
 
-            {/* Change Time Slot */}
             <Text style={styles.modalSubTitle}>Select Time Slot</Text>
             <View style={styles.timeGrid}>
               {TIME_SLOTS.map((t) => (
@@ -241,7 +254,6 @@ export default function MenuScreen() {
               ))}
             </View>
 
-            {/* Modal Actions */}
             <View style={styles.modalActions}>
               <TouchableOpacity
                 style={styles.modalCancelBtn}
@@ -375,7 +387,6 @@ const styles = StyleSheet.create({
     color: '#888',
     fontSize: 14,
   },
-  /* Past Appointments Styles */
   pastCard: {
     opacity: 0.8,
     backgroundColor: '#fafafa',
@@ -395,7 +406,6 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     fontWeight: '600',
   },
-  /* Modal Styles */
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
