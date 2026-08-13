@@ -22,7 +22,7 @@ function RootLayoutNav() {
       // Redirect verified users to the main tab flow
       router.replace('/(tabs)');
     }
-  }, [isVerified, isLoading, segments]);
+  }, [isVerified, isLoading, segments,router]);
 
   if (isLoading) {
     return (

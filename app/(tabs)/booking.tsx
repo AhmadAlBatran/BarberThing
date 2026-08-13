@@ -12,10 +12,9 @@ import {
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 
 const SERVICES = [
-  'Haircut & Styling',
-  'Beard Trim',
-  'Full Grooming Package',
-  'Facial Care',
+  { id: '1', name: 'Haircut', price: 25 },
+  { id: '2', name: 'Beard Trim', price: 10 },
+  { id: '3', name: 'Hair Color', price: 50 },
 ];
 
 const TIME_SLOTS = [
@@ -26,8 +25,15 @@ const TIME_SLOTS = [
   '04:00 PM',
 ];
 
+type Service = {
+  id: string;
+  name: string;
+  price: number;
+};
+
 export default function HomeScreen() {
-  const [selectedService, setSelectedService] = useState<string>('');
+  // Store multiple selected services in an array
+  const [selectedServices, setSelectedServices] = useState<Service[]>([]);
   const [date, setDate] = useState<Date>(new Date());
   const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
   const [selectedTime, setSelectedTime] = useState<string>('');
@@ -35,6 +41,17 @@ export default function HomeScreen() {
   // User Details State
   const [name, setName] = useState<string>('');
   const [phone, setPhone] = useState<string>('');
+
+  const toggleServiceSelection = (service: Service) => {
+    setSelectedServices((prevServices) => {
+      const exists = prevServices.some((s) => s.id === service.id);
+      if (exists) {
+        return prevServices.filter((s) => s.id !== service.id);
+      } else {
+        return [...prevServices, service];
+      }
+    });
+  };
 
   const handleDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
     setShowDatePicker(Platform.OS === 'ios');
@@ -50,21 +67,26 @@ export default function HomeScreen() {
       return;
     }
 
-    // Basic phone validation (at least 8-10 digits)
+    // Basic phone validation (at least 8-15 digits/symbols)
     const phoneRegex = /^[0-9\-\+\s]{8,15}$/;
     if (!phoneRegex.test(phone.trim())) {
       Alert.alert('Invalid Phone', 'Please enter a valid phone number.');
       return;
     }
 
-    if (!selectedService || !selectedTime) {
-      Alert.alert('Incomplete', 'Please select a service, date, and time slot.');
+    if (selectedServices.length === 0 || !selectedTime) {
+      Alert.alert('Incomplete', 'Please select at least one service, date, and time slot.');
       return;
     }
 
+    const serviceNames = selectedServices.map((s) => s.name).join(', ');
+    const totalPrice = selectedServices.reduce((sum, s) => sum + s.price, 0);
+
     Alert.alert(
       'Booking Confirmed! 🎉',
-      `Name: ${name}\nPhone: ${phone}\nService: ${selectedService}\nDate: ${date.toDateString()}\nTime: ${selectedTime}`
+      `Name: ${name}\nPhone: ${phone}\nServices: ${serviceNames}\nTotal Price: $${totalPrice.toFixed(
+        2
+      )}\nDate: ${date.toDateString()}\nTime: ${selectedTime}`
     );
   };
 
@@ -92,27 +114,39 @@ export default function HomeScreen() {
       </View>
 
       {/* 2. Service Selection */}
-      <Text style={styles.sectionTitle}>2. Select Service</Text>
+      <Text style={styles.sectionTitle}>2. Select Services</Text>
       <View style={styles.listContainer}>
-        {SERVICES.map((item) => (
-          <TouchableOpacity
-            key={item}
-            style={[
-              styles.card,
-              selectedService === item && styles.selectedCard,
-            ]}
-            onPress={() => setSelectedService(item)}
-          >
-            <Text
+        {SERVICES.map((item) => {
+          const isSelected = selectedServices.some((s) => s.id === item.id);
+
+          return (
+            <TouchableOpacity
+              key={item.id}
               style={[
-                styles.cardText,
-                selectedService === item && styles.selectedCardText,
+                styles.card,
+                isSelected && styles.selectedCard,
               ]}
+              onPress={() => toggleServiceSelection(item)}
             >
-              {item}
-            </Text>
-          </TouchableOpacity>
-        ))}
+              <Text
+                style={[
+                  styles.cardText,
+                  isSelected && styles.selectedCardText,
+                ]}
+              >
+                {item.name}
+              </Text>
+              <Text
+                style={[
+                  styles.cardPrice,
+                  isSelected && styles.selectedCardText,
+                ]}
+              >
+                ${item.price.toFixed(2)}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       {/* 3. Date Selection */}
@@ -218,6 +252,10 @@ const styles = StyleSheet.create({
   selectedCardText: {
     fontWeight: 'bold',
     color: '#007AFF',
+  },
+  cardPrice: {
+    fontSize: 14,
+    color: '#666',
   },
   dateButton: {
     padding: 16,

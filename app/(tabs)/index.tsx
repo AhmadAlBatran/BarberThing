@@ -29,10 +29,10 @@ const TIME_SLOTS = [
 
 interface Appointment {
   id: string;
-  service: string;
+  services: string[];
   date: string;
   time: string;
-  barber: string;
+
 }
 
 const PAST_APPOINTMENTS = [
@@ -52,40 +52,37 @@ const PAST_APPOINTMENTS = [
 
 export default function MenuScreen() {
   // 2. CALL THE HOOK AT THE TOP OF YOUR COMPONENT
-  const { logout, userPhone } = useAuth();
+  const { logout, userPhone, userName } = useAuth();
 
   const [upcoming, setUpcoming] = useState<Appointment[]>([
     {
       id: '1',
-      service: 'Haircut & Styling',
+      services: ['Haircut & Styling'],
       date: 'Sat, Jul 25, 2026',
       time: '10:30 AM',
-      barber: 'Alex',
     },
     {
       id: '2',
-      service: 'Beard Trim',
+      services: ['Beard Trim'],
       date: 'Mon, Aug 03, 2026',
       time: '02:30 PM',
-      barber: 'Sam',
     },
     {
       id: '3',
-      service: 'Facial Care',
+      services: ['Facial Care'],
       date: 'Fri, Aug 14, 2026',
       time: '09:00 AM',
-      barber: 'Jordan',
     },
   ]);
 
   // Modal & Edit State
   const [editingItem, setEditingItem] = useState<Appointment | null>(null);
-  const [editService, setEditService] = useState<string>('');
+  const [editServices, setEditServices] = useState<string[]>([]);
   const [editTime, setEditTime] = useState<string>('');
 
   // 3. USE THE DYNAMIC PHONE NUMBER FROM CONTEXT
   const user = {
-    name: 'John Doe',
+    name: userName || 'John Doe',
     phone: userPhone || '+1 234 567 890',
   };
 
@@ -110,18 +107,32 @@ export default function MenuScreen() {
   // 2. Open Edit Modal
   const openEditModal = (item: Appointment) => {
     setEditingItem(item);
-    setEditService(item.service);
+    setEditServices(item.services);
     setEditTime(item.time);
+  };
+
+  // Toggle a service in/out of the edit selection — same pattern as booking.tsx
+  const toggleEditService = (service: string) => {
+    setEditServices((prev) =>
+      prev.includes(service)
+        ? prev.filter((s) => s !== service)
+        : [...prev, service]
+    );
   };
 
   // 3. Save Changes
   const handleSaveEdit = () => {
     if (!editingItem) return;
 
+    if (editServices.length === 0) {
+      Alert.alert('Missing Service', 'Please select at least one service.');
+      return;
+    }
+
     setUpcoming((prev) =>
       prev.map((item) =>
         item.id === editingItem.id
-          ? { ...item, service: editService, time: editTime }
+          ? { ...item, services: editServices, time: editTime }
           : item
       )
     );
@@ -163,7 +174,7 @@ export default function MenuScreen() {
         upcoming.map((item) => (
           <View key={item.id} style={styles.card}>
             <View style={styles.cardHeader}>
-              <Text style={styles.serviceTitle}>{item.service}</Text>
+              <Text style={styles.serviceTitle}>{item.services.join(', ')}</Text>
 
               {/* EDIT BUTTON */}
               <TouchableOpacity
@@ -175,7 +186,6 @@ export default function MenuScreen() {
             </View>
 
             <Text style={styles.detailText}>📅 {item.date} at {item.time}</Text>
-            <Text style={styles.detailText}>💈 Barber: {item.barber}</Text>
 
             {/* CANCEL BUTTON */}
             <TouchableOpacity
@@ -210,26 +220,29 @@ export default function MenuScreen() {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Edit Appointment</Text>
 
-            <Text style={styles.modalSubTitle}>Select Service or Package</Text>
-            {SERVICES.map((s) => (
-              <TouchableOpacity
-                key={s}
-                style={[
-                  styles.modalOption,
-                  editService === s && styles.modalOptionSelected,
-                ]}
-                onPress={() => setEditService(s)}
-              >
-                <Text
+            <Text style={styles.modalSubTitle}>Select Service(s) or Package</Text>
+            {SERVICES.map((s) => {
+              const isSelected = editServices.includes(s);
+              return (
+                <TouchableOpacity
+                  key={s}
                   style={[
-                    styles.modalOptionText,
-                    editService === s && styles.modalOptionTextSelected,
+                    styles.modalOption,
+                    isSelected && styles.modalOptionSelected,
                   ]}
+                  onPress={() => toggleEditService(s)}
                 >
-                  {s}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <Text
+                    style={[
+                      styles.modalOptionText,
+                      isSelected && styles.modalOptionTextSelected,
+                    ]}
+                  >
+                    {s}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
 
             <Text style={styles.modalSubTitle}>Select Time Slot</Text>
             <View style={styles.timeGrid}>
